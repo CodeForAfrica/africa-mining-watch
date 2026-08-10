@@ -178,6 +178,9 @@
   .btnset .btn:last-child { border-radius: 0 4px 4px 0; }
   .btn.on { background: var(--ink); border-color: var(--ink); color: var(--plane); position: relative; z-index: 1; }
   .toggle { display: flex; align-items: center; gap: 7px; font-size: 13.5px; color: var(--ink-2); cursor: pointer; padding-bottom: 7px; }
+  /* an author `display` beats the UA's [hidden] rule, so restate it here or the
+     protected-areas toggle shows up with nothing behind it */
+  .toggle[hidden] { display: none; }
   .toggle input { accent-color: var(--focus); width: 15px; height: 15px; cursor: pointer; }
   /* class and :has() both, so the disabled state holds on older engines too */
   .toggle.is-off, .toggle:has(input:disabled) { color: var(--muted); cursor: not-allowed; }
