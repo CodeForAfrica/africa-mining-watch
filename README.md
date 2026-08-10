@@ -3,7 +3,7 @@
 Where satellite-detected mining sits on the administrative map of West Africa and
 the Congo Basin, and how unevenly it is spread.
 
-**Live map:** https://codeforafrica.github.io/Africa-Mining-Watch/
+**Live map:** https://codeforafrica.github.io/africa-mining-watch/
 
 Two Earth Index surveys mapped the ground scars left by mining across fourteen
 countries. This repository holds the interactive map built from them, the tables
