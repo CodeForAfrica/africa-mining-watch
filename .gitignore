@@ -1,0 +1,10 @@
+# Third-party source data - not ours to redistribute, and large.
+# See README.md for where to get each of these.
+results/                              # Earth Genome detection surveys
+GeoJSON boundaries - simplified.json  # geoBoundaries ADM2/ADM3 (29 MB)
+wdpa/*                                # WDPA extracts (licence-gated)
+!wdpa/README.md
+
+__pycache__/
+*.pyc
+.DS_Store
