@@ -10,16 +10,9 @@ font CDNs, so `build_page.py` inlines them into `index.html` as base64.
 - Licence: **SIL Open Font License 1.1**
 - Source: https://github.com/vercel/geist-font
 
-## Outstanding obligation
+## Licence text
 
-The OFL permits bundling and redistribution, **but requires that the licence text
-accompany the font**. The full `OFL.txt` is not included here because it should be
-copied verbatim from the upstream repository rather than retyped:
-
-```bash
-curl -o pipeline/fonts/OFL.txt \
-  https://raw.githubusercontent.com/vercel/geist-font/main/LICENSE.TXT
-```
-
-Do that before this repository is made public. Because `index.html` embeds the
-fonts, the obligation applies to the published page as well as to these files.
+The OFL requires that the licence accompany the font, so the full text is in
+[`OFL.txt`](OFL.txt), copied verbatim from the upstream repository. Because
+`index.html` embeds the fonts as base64, this obligation covers the published
+page as well as these files.

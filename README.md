@@ -97,9 +97,9 @@ source boundaries. Keep it that way.
 ## Before publishing — checklist for maintainers
 
 - [ ] Add a `LICENSE` for the code and data in this repo (not chosen here — CfA's call).
-- [ ] Add `pipeline/fonts/OFL.txt` — the Geist fonts are embedded in `index.html`
-      under the SIL Open Font License 1.1, which requires the licence text to
-      travel with the font. See [`pipeline/fonts/NOTICE.md`](pipeline/fonts/NOTICE.md).
+- [x] Geist font licence — `pipeline/fonts/OFL.txt` is in place; the fonts are
+      embedded in `index.html` under the SIL Open Font License 1.1. See
+      [`pipeline/fonts/NOTICE.md`](pipeline/fonts/NOTICE.md).
 - [ ] Confirm with Earth Genome how they want the detection surveys credited.
 
 ## Credits
