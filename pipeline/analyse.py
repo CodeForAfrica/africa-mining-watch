@@ -8,7 +8,7 @@ Inputs
   results/WestAfrica_EI_2026-06-24-dissolved.geojson
   GeoJSON boundaries - simplified.json     (geoBoundaries ADM2/ADM3, 14 countries)
 
-Outputs (data/)
+Outputs (analysis/)
   detections_by_admin.csv     one row per admin unit that contains >=1 detection
   detections_by_country.csv   country rollup
   summary.json                headline numbers
@@ -21,7 +21,7 @@ import geopandas as gpd
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "data"
+OUT = ROOT / "analysis"
 
 DETECTIONS = {
     "Congo Basin": ROOT / "results" / "CongoBasin_EI_2026-06-17-dissolved.geojson",
@@ -253,6 +253,16 @@ def main() -> None:
     by_country["admin_units_total"] = by_country["country"].map(units_total)
     by_country["pct_admin_units_affected"] = (
         by_country["admin_units_with_detections"] / by_country["admin_units_total"] * 100.0
+    )
+    # Country totals on the same footing as the per-area figures, so the map's
+    # panel can show the same five rows whichever you click.
+    country_area = adm.groupby("country")["adm_area_km2"].sum()
+    by_country["country_area_km2"] = by_country["country"].map(country_area)
+    by_country["pct_area_mined"] = (
+        by_country["mined_area_ha"] / 100.0 / by_country["country_area_km2"] * 100.0
+    )
+    by_country["detections_per_1000km2"] = (
+        by_country["detections"] / by_country["country_area_km2"] * 1000.0
     )
     by_country = by_country.sort_values("detections", ascending=False).reset_index(drop=True)
 

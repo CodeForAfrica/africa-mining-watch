@@ -68,7 +68,10 @@
       "mined_area_ha": 454334.70185521,
       "admin_units_with_detections": 173,
       "admin_units_total": 260,
-      "pct_admin_units_affected": 66.53846153846153
+      "pct_admin_units_affected": 66.53846153846153,
+      "country_area_km2": 239474.034597083,
+      "pct_area_mined": 1.8972190560017574,
+      "detections_per_1000km2": 15.64679029317044
     },
     {
       "country": "Guinea",
@@ -77,7 +80,10 @@
       "mined_area_ha": 118998.47370897107,
       "admin_units_with_detections": 79,
       "admin_units_total": 340,
-      "pct_admin_units_affected": 23.235294117647058
+      "pct_admin_units_affected": 23.235294117647058,
+      "country_area_km2": 244785.37717855687,
+      "pct_area_mined": 0.4861339148627678,
+      "detections_per_1000km2": 10.164005826970405
     },
     {
       "country": "DR Congo",
@@ -86,7 +92,10 @@
       "mined_area_ha": 84931.46071613918,
       "admin_units_with_detections": 76,
       "admin_units_total": 189,
-      "pct_admin_units_affected": 40.21164021164021
+      "pct_admin_units_affected": 40.21164021164021,
+      "country_area_km2": 2330344.4457578044,
+      "pct_area_mined": 0.03644588286969754,
+      "detections_per_1000km2": 0.697750928177161
     },
     {
       "country": "C\u00f4te d'Ivoire",
@@ -95,7 +104,10 @@
       "mined_area_ha": 54506.69071628364,
       "admin_units_with_detections": 183,
       "admin_units_total": 510,
-      "pct_admin_units_affected": 35.88235294117647
+      "pct_admin_units_affected": 35.88235294117647,
+      "country_area_km2": 321608.0492230532,
+      "pct_area_mined": 0.16948173669148495,
+      "detections_per_1000km2": 3.7467967698913682
     },
     {
       "country": "Cameroon",
@@ -104,7 +116,10 @@
       "mined_area_ha": 48101.957226693055,
       "admin_units_with_detections": 28,
       "admin_units_total": 360,
-      "pct_admin_units_affected": 7.777777777777778
+      "pct_admin_units_affected": 7.777777777777778,
+      "country_area_km2": 466372.1806931579,
+      "pct_area_mined": 0.10314070868292413,
+      "detections_per_1000km2": 1.9147797338013501
     },
     {
       "country": "Nigeria",
@@ -113,7 +128,10 @@
       "mined_area_ha": 22280.852878841637,
       "admin_units_with_detections": 158,
       "admin_units_total": 774,
-      "pct_admin_units_affected": 20.41343669250646
+      "pct_admin_units_affected": 20.41343669250646,
+      "country_area_km2": 912512.6879344074,
+      "pct_area_mined": 0.02441703350917485,
+      "detections_per_1000km2": 0.9424526490110765
     },
     {
       "country": "Liberia",
@@ -122,7 +140,10 @@
       "mined_area_ha": 20195.136200891837,
       "admin_units_with_detections": 79,
       "admin_units_total": 136,
-      "pct_admin_units_affected": 58.08823529411765
+      "pct_admin_units_affected": 58.08823529411765,
+      "country_area_km2": 95844.83317258133,
+      "pct_area_mined": 0.210706571574159,
+      "detections_per_1000km2": 5.2480658930699144
     },
     {
       "country": "Central African Republic",
@@ -131,7 +152,10 @@
       "mined_area_ha": 19907.481505849835,
       "admin_units_with_detections": 59,
       "admin_units_total": 175,
-      "pct_admin_units_affected": 33.714285714285715
+      "pct_admin_units_affected": 33.714285714285715,
+      "country_area_km2": 620304.2067600997,
+      "pct_area_mined": 0.03209309446703297,
+      "detections_per_1000km2": 0.7834865453168829
     },
     {
       "country": "Sierra Leone",
@@ -140,7 +164,10 @@
       "mined_area_ha": 20140.587598408114,
       "admin_units_with_detections": 63,
       "admin_units_total": 165,
-      "pct_admin_units_affected": 38.18181818181819
+      "pct_admin_units_affected": 38.18181818181819,
+      "country_area_km2": 72594.22162996898,
+      "pct_area_mined": 0.2774406439822409,
+      "detections_per_1000km2": 6.584546114930282
     },
     {
       "country": "Republic of the Congo",
@@ -149,7 +176,10 @@
       "mined_area_ha": 10251.707265660587,
       "admin_units_with_detections": 12,
       "admin_units_total": 46,
-      "pct_admin_units_affected": 26.08695652173913
+      "pct_admin_units_affected": 26.08695652173913,
+      "country_area_km2": 341708.9646967865,
+      "pct_area_mined": 0.030001282742925347,
+      "detections_per_1000km2": 0.6087051306499016
     },
     {
       "country": "Gabon",
@@ -158,7 +188,10 @@
       "mined_area_ha": 6798.328340548661,
       "admin_units_with_detections": 19,
       "admin_units_total": 49,
-      "pct_admin_units_affected": 38.775510204081634
+      "pct_admin_units_affected": 38.775510204081634,
+      "country_area_km2": 262371.4847637626,
+      "pct_area_mined": 0.02591107927246677,
+      "detections_per_1000km2": 0.6441248756592828
     },
     {
       "country": "Benin",
@@ -167,7 +200,10 @@
       "mined_area_ha": 2678.59065422798,
       "admin_units_with_detections": 45,
       "admin_units_total": 546,
-      "pct_admin_units_affected": 8.241758241758241
+      "pct_admin_units_affected": 8.241758241758241,
+      "country_area_km2": 114933.58394413666,
+      "pct_area_mined": 0.023305552322547482,
+      "detections_per_1000km2": 1.113686666746721
     },
     {
       "country": "Togo",
@@ -176,7 +212,10 @@
       "mined_area_ha": 3482.4156648856156,
       "admin_units_with_detections": 19,
       "admin_units_total": 37,
-      "pct_admin_units_affected": 51.35135135135135
+      "pct_admin_units_affected": 51.35135135135135,
+      "country_area_km2": 56766.63735973914,
+      "pct_area_mined": 0.06134616786999373,
+      "detections_per_1000km2": 1.8672939763590586
     },
     {
       "country": "Equatorial Guinea",
@@ -185,7 +224,10 @@
       "mined_area_ha": 3.111159307916354,
       "admin_units_with_detections": 1,
       "admin_units_total": 28,
-      "pct_admin_units_affected": 3.571428571428571
+      "pct_admin_units_affected": 3.571428571428571,
+      "country_area_km2": 26903.94447243135,
+      "pct_area_mined": 0.00011563952308570884,
+      "detections_per_1000km2": 0.03716927088608537
     }
   ],
   "top_admin_units": [

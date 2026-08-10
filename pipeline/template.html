@@ -227,8 +227,11 @@
   }
 
   .cont { fill: var(--offland); stroke: var(--offland-edge); stroke-width: 1; }
-  .cont.surveyed { fill: var(--land); stroke: var(--land-edge); }
-  .country-outline { fill: var(--land); stroke: var(--land-edge); stroke-width: 1; }
+  .cont.surveyed { fill: var(--land); stroke: var(--land-edge); cursor: pointer; }
+  .country-outline { fill: var(--land); stroke: var(--land-edge); stroke-width: 1; cursor: pointer; }
+  /* a pinned country reads as a heavier national border, distinct from the
+     thinner ring used for a single administrative area */
+  .country-outline.sel, .cont.surveyed.sel { stroke: var(--ink); stroke-width: 2.6; }
   .adm { stroke: var(--surface); stroke-width: .5; stroke-linejoin: round; cursor: pointer; }
   .adm.dim { opacity: .18; }
   .adm.hot { stroke: var(--ink); stroke-width: 1.6; }
@@ -427,8 +430,9 @@
       <p class="sec-note">
         The fourteen surveyed countries sit inside the outline of the whole continent, so
         the belt of activity reads against the rest of Africa. Each administrative area is
-        shaded by how many mining footprints touch it. Hover for a quick read, click to pin
-        an area to the panel, drag to pan, and use the buttons or ctrl/&#8984;+scroll to zoom.
+        shaded by how many mining footprints touch it. Click a shaded area to pin its
+        numbers to the panel, or anywhere else in a surveyed country for that
+        country&rsquo;s total. Drag to pan, and zoom with the buttons or ctrl/&#8984;+scroll.
       </p>
     </div>
 
@@ -587,7 +591,7 @@
   // clusters ship off and the control is disabled: the choropleth already
   // encodes intensity, and the markers were covering the areas underneath
   var state = { metric: "d", region: "all", dots: false, clusters: false,
-                protected: false, hot: -1, sel: -1 };
+                protected: false, hot: -1, sel: -1, selIso: null };
 
   // u.g: 0 = West Africa survey only, 1 = Congo Basin only, 2 = both
   function inRegion(u) {
@@ -667,18 +671,28 @@
   var gCont = el("g", {});
   gRoot.appendChild(gCont);
   DATA.continent.forEach(function (c) {
-    gCont.appendChild(el("path", {
+    var p = el("path", {
       d: ringPath(c.r),
       class: "cont" + (c.s ? " surveyed" : ""),
       "vector-effect": "non-scaling-stroke"
-    }));
+    });
+    // surveyed countries are clickable here too: this backdrop coastline differs
+    // slightly from the dissolved survey outline and can sit exposed
+    if (c.s) p.__iso = c.i;
+    gCont.appendChild(p);
   });
 
-  // layer 1 \u2014 country land
+  // layer 1 \u2014 the surveyed countries. Clickable: where no affected area sits on
+  // top, clicking here pins the country's aggregate instead.
   var gLand = el("g", {});
   gRoot.appendChild(gLand);
+  var countryNodes = {};
   DATA.countries.forEach(function (c) {
-    gLand.appendChild(el("path", { d: ringPath(c.r), class: "country-outline", "vector-effect": "non-scaling-stroke" }));
+    var p = el("path", { d: ringPath(c.r), class: "country-outline",
+                         "vector-effect": "non-scaling-stroke" });
+    p.__iso = c.i;
+    gLand.appendChild(p);
+    (countryNodes[c.i] = countryNodes[c.i] || []).push(p);
   });
 
   // layer 2 \u2014 choropleth
@@ -919,14 +933,38 @@
       "</dl>";
   }
 
-  function showTip(i, evt) {
-    tip.innerHTML = detailBlock(UNITS[i]);
+  // Country aggregates, keyed by ISO3 so name spellings never have to match.
+  var BY_ISO = {};
+  S.by_country.forEach(function (r) { BY_ISO[r.shapeGroup] = r; });
+
+  function countryBlock(c) {
+    return '<div class="d-name">' + esc(c.country) + "</div>" +
+      '<div class="d-sub">Country total \u00b7 ' + esc(c.shapeGroup) + "</div>" +
+      '<dl class="d-dl">' +
+        "<dt>Detections</dt><dd>" + fmt(c.detections) + "</dd>" +
+        "<dt>Mined area</dt><dd>" + fmt(c.mined_area_ha) + " ha</dd>" +
+        "<dt>Total area</dt><dd>" + fmt(c.country_area_km2) + " km\u00b2</dd>" +
+        "<dt>Share mined</dt><dd>" + fmt(c.pct_area_mined, 2) + "%</dd>" +
+        "<dt>Per 1,000 km\u00b2</dt><dd>" + fmt(c.detections_per_1000km2, 1) + "</dd>" +
+        "<dt>Areas affected</dt><dd>" + fmt(c.admin_units_with_detections) +
+          " / " + fmt(c.admin_units_total) + "</dd>" +
+        "<dt>Share of areas</dt><dd>" + fmt(c.pct_admin_units_affected, 1) + "%</dd>" +
+      "</dl>";
+  }
+
+  function showTipHtml(html, evt) {
+    tip.innerHTML = html;
     var r = card.getBoundingClientRect();
+    var h = tip.offsetHeight || 150;
     var x = evt.clientX - r.left + 14, y = evt.clientY - r.top + 14;
     if (x + 270 > r.width) x = evt.clientX - r.left - 270;
-    if (y + 150 > r.height) y = Math.max(6, evt.clientY - r.top - 150);
+    if (y + h + 8 > r.height) y = Math.max(6, evt.clientY - r.top - h - 8);
     tip.style.left = x + "px"; tip.style.top = y + "px";
     tip.classList.add("on");
+  }
+
+  function showTip(i, evt) {
+    showTipHtml(detailBlock(UNITS[i]), evt);
     setHot(i);
   }
   function hideTip() { tip.classList.remove("on"); setHot(-1); }
@@ -950,8 +988,15 @@
   /* ---------------- pinned inspector ---------------- */
   var inspector = document.getElementById("inspector");
 
+  function clearCountry() {
+    if (!state.selIso) return;
+    (countryNodes[state.selIso] || []).forEach(function (p) { p.classList.remove("sel"); });
+    state.selIso = null;
+  }
+
   function selectUnit(i) {
-    if (state.sel === i) return;
+    if (state.sel === i && !state.selIso) return;
+    clearCountry();                              // area and country are exclusive
     if (state.sel >= 0) {
       unitNodes[state.sel].classList.remove("sel");
       var pr = document.querySelector('.row[data-i="' + state.sel + '"]');
@@ -967,20 +1012,39 @@
     renderInspector();
   }
 
+  function selectCountry(iso) {
+    if (!iso || !BY_ISO[iso]) { selectUnit(-1); return; }
+    if (state.selIso === iso) { clearCountry(); renderInspector(); return; }
+    selectUnit(-1);                              // drops any pinned area
+    clearCountry();
+    state.selIso = iso;
+    (countryNodes[iso] || []).forEach(function (p) { p.classList.add("sel"); });
+    renderInspector();
+  }
+
   function renderInspector() {
-    if (state.sel < 0) {
-      inspector.innerHTML = '<div class="ins-head">No area selected</div>' +
-        '<div class="ins-hint">Click an area on the map to pin its numbers here. ' +
-        "You can also click a row in the ranked list below.</div>";
+    if (state.selIso) {
+      inspector.innerHTML =
+        '<div class="ins-head">Selected country' +
+          '<button type="button" class="ins-clear" id="insClear">Clear</button></div>' +
+        countryBlock(BY_ISO[state.selIso]) +
+        '<div class="ins-hint">Every administrative area in this country, added up. ' +
+        "Click a shaded area for its own numbers.</div>";
+    } else if (state.sel < 0) {
+      inspector.innerHTML = '<div class="ins-head">Nothing selected</div>' +
+        '<div class="ins-hint">Click a shaded area for its numbers, or anywhere else ' +
+        "in a surveyed country for that country's total. Rows in the ranked list " +
+        "below work too.</div>";
       return;
+    } else {
+      inspector.innerHTML =
+        '<div class="ins-head">Selected area' +
+          '<button type="button" class="ins-clear" id="insClear">Clear</button></div>' +
+        detailBlock(UNITS[state.sel]) +
+        '<div class="ins-hint">Click another area to switch, or the same one to unpin.</div>';
     }
-    inspector.innerHTML =
-      '<div class="ins-head">Selected area' +
-        '<button type="button" class="ins-clear" id="insClear">Clear</button></div>' +
-      detailBlock(UNITS[state.sel]) +
-      '<div class="ins-hint">Click another area to switch, or the same one to unpin.</div>';
     document.getElementById("insClear").addEventListener("click", function () {
-      selectUnit(-1);
+      selectUnit(-1); clearCountry(); renderInspector();
     });
   }
 
@@ -997,12 +1061,29 @@
     });
   }
 
+  // Country-level hover and click, on the dissolved survey outline and on the
+  // backdrop copy of the same country, whose coastline differs slightly.
+  function bindCountry(node) {
+    if (!node.__iso || !BY_ISO[node.__iso]) return;
+    node.addEventListener("pointermove", function (e) {
+      if (!drag) showTipHtml(countryBlock(BY_ISO[node.__iso]), e);
+    });
+    node.addEventListener("pointerleave", hideTip);
+    node.addEventListener("click", function () {
+      if (wasATap()) selectCountry(node.__iso);
+    });
+  }
+  Array.prototype.forEach.call(gLand.querySelectorAll(".country-outline"), bindCountry);
+  Array.prototype.forEach.call(gCont.querySelectorAll(".cont.surveyed"), bindCountry);
+
   // A tap on the sea, or on a country outside the survey, clears the panel.
   svg.addEventListener("click", function (e) {
     if (!wasATap()) return;
     var t = e.target;
-    if (t && t.classList && (t.classList.contains("adm") || t.classList.contains("clu"))) return;
-    selectUnit(-1);
+    if (!t || !t.classList) return;
+    if (t.classList.contains("adm") || t.classList.contains("clu")) return;
+    if (t.__iso) return;                    // the country binding handles these
+    selectUnit(-1); clearCountry(); renderInspector();
   });
   unitNodes.forEach(bindHover);
   cluNodes.forEach(bindHover);

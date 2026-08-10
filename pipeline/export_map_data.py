@@ -14,7 +14,7 @@ import pandas as pd
 from shapely.geometry import MultiPolygon, Polygon
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "data"
+OUT = ROOT / "analysis"
 BOUNDARIES = ROOT / "GeoJSON boundaries - simplified.json"
 EQUAL_AREA = "ESRI:102022"
 
@@ -100,7 +100,8 @@ def main() -> None:
                                                   preserve_topology=True)
     continent_layer = [
         {"n": r["name"],
-         "s": 1 if r["iso_a3"] in SURVEYED_ISO3 else 0,
+         "i": r["iso_a3"],          # match survey stats by code, not by name:
+         "s": 1 if r["iso_a3"] in SURVEYED_ISO3 else 0,   # NE says "Dem. Rep. Congo"
          "r": rings(r.geometry, 2)}
         for _, r in africa.iterrows()
     ]
@@ -108,10 +109,10 @@ def main() -> None:
 
     # ---- layer 1: country outlines ---------------------------------------
     print("dissolving country outlines ...")
-    diss = adm.dissolve(by="country").reset_index()
+    diss = adm.dissolve(by=["country", "shapeGroup"]).reset_index()
     diss["geometry"] = diss.geometry.simplify(COUNTRY_TOLERANCE, preserve_topology=True)
     country_layer = [
-        {"n": r["country"], "r": rings(r.geometry, 2)}
+        {"n": r["country"], "i": r["shapeGroup"], "r": rings(r.geometry, 2)}
         for _, r in diss.iterrows()
     ]
 
