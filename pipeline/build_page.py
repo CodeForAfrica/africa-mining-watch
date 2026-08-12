@@ -84,8 +84,6 @@ def main() -> None:
     tok, out_name, has_token = tile_config()
     assert "__MAPBOX_TOKEN__" in out, "template lost __MAPBOX_TOKEN__"
     out = out.replace("__MAPBOX_TOKEN__", tok)
-    for ph in ("__TILE_URL__", "__TILE_ATTR__"):
-        out = out.replace(ph, "")
 
     non_ascii = sorted({c for c in out if ord(c) > 127})
     assert not non_ascii, f"non-ascii leaked into the page: {non_ascii}"
@@ -100,7 +98,7 @@ def main() -> None:
     path.write_text(out, encoding="ascii")
     print(f"wrote {path.name}: {path.stat().st_size / 1e6:.2f} MB")
     if has_token:
-        print(f"  tiles: Mapbox on africaminingwatch.org, Esri elsewhere (token from "
+        print(f"  tiles: Mapbox Satellite (token from "
               f"{'$MAPBOX_TOKEN' if os.environ.get('MAPBOX_TOKEN') else TOKEN_FILE.name})")
         print(f"  NOTE: {path.name} carries the token and is git-ignored.")
         print(f"        This is the build to deploy to africaminingwatch.org.")

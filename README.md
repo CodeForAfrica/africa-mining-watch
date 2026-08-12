@@ -78,34 +78,26 @@ python3 pipeline/build_page.py       # inline payload + fonts into index.html
 
 ## Satellite view
 
-The map has a **Satellite imagery** toggle. Which tile service it uses is decided
-at load time, by host:
+The map has a **Satellite imagery** toggle. With no Mapbox token supplied at
+build time it uses **Esri World Imagery**, which needs no key; build with a token
+and it uses **Mapbox Satellite** instead. Attribution for whichever service is in
+use is shown on the map whenever the layer is on, as both require.
 
-| Served from | Tiles |
-|---|---|
-| `africaminingwatch.org` and its subdomains, **when built with a token** | Mapbox Satellite |
-| anywhere else, or built without a token | Esri World Imagery, no key |
-
-The shared Africa Mining Watch Mapbox token is **origin-restricted to
-africaminingwatch.org**. Verified: it returns imagery with that referer and
-`403 Forbidden` for GitHub Pages, for localhost and with no referer. So a single
-hardcoded provider cannot serve both the test copy and the final home - hence the
-split. Once this page is embedded in the main site it uses the same token as
-everything else there.
-
-Attribution for whichever service is in use is shown on the map whenever the
-layer is on, as both Esri and Mapbox require.
+Zoom reaches tile level 16, which is close enough to make individual workings
+visible. The boundaries are simplified to about 440 m so they go blocky well
+before that - acceptable, because at that range the imagery is what you are
+reading.
 
 This is why the map is drawn in **Web Mercator** rather than plate carree: tile
 services publish in Mercator, and imagery would not line up under the vectors
 otherwise. Areas are still measured on Africa Albers - only the display
 projection changed.
 
-### Building the Mapbox version
+### Building with Mapbox
 
 **No Mapbox token is committed to this repository.** GitHub push protection
 blocks Mapbox tokens, and it is right to - a token in git outlives its usefulness
-and is trivially scraped. The token is injected at build time instead:
+and is trivially scraped. The token is injected at build time:
 
 ```bash
 export MAPBOX_TOKEN=pk.your_token_here      # or:
@@ -113,19 +105,22 @@ echo 'pk.your_token_here' > pipeline/mapbox_token.txt
 python3 pipeline/build_page.py
 ```
 
-That writes **`index.mapbox.html`** - the build to deploy to
-africaminingwatch.org. `index.html`, the one committed and served on GitHub
-Pages, stays keyless. Both `pipeline/mapbox_token.txt` and `*.mapbox.html` are
-git-ignored, and `build_page.py` refuses to write the committed page if any
-Mapbox token is found in it. `sk.` secret tokens are rejected outright: they
-grant account-wide access and must never sit in a page.
+That writes **`index.mapbox.html`**, which carries the token. `index.html` - the
+one committed and served on GitHub Pages - stays keyless. Both
+`pipeline/mapbox_token.txt` and `*.mapbox.html` are git-ignored, and
+`build_page.py` refuses to write the committed page if any Mapbox token is found
+in it. `sk.` secret tokens are rejected outright: they grant account-wide access
+and must never sit in a page.
 
-### Testing Mapbox on localhost
+If a token does not work on the origin the page is served from, the tiles 403,
+and the toggle disables itself rather than sitting there dead.
 
-The origin restriction means the shared token returns 403 on localhost. Either
-add `http://localhost:*` to that token's URL restrictions in the Mapbox
-dashboard - which needs access to the `earthrise` account - or build with a
-separate unrestricted development token.
+**On the shared token.** The Africa Mining Watch token on the `earthrise`
+account is restricted to the `africaminingwatch.org` origin - verified: imagery
+with that referer, `403 Forbidden` from GitHub Pages, localhost and no referer.
+It is the right token for the build that ships to the main site, but it cannot
+be used for local testing unless those origins are added to it in the Mapbox
+dashboard. Use a separate unrestricted token for that.
 
 ## The GeoJSON layers
 
