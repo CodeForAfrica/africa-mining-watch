@@ -206,6 +206,6 @@ source boundaries. Keep it that way.
 
 ## Credits
 
-Analysis and map by Code for Africa. Detections by
-[Earth Genome](https://www.earthgenome.org/) via Earth Index. Part of
-[Africa Mining Watch](https://africaminingwatch.org).
+A collaboration between [Code for Africa](https://codeforafrica.org) and
+[Earth Genome](https://www.earthgenome.org/), joint copyright holders. Detections
+from Earth Index. Part of [Africa Mining Watch](https://africaminingwatch.org).

@@ -3,7 +3,7 @@
 The code in this repository is MIT — see [`LICENSE`](LICENSE). Software licences
 are a poor fit for data, so the derived tables are licensed separately.
 
-## What Code for Africa licenses
+## What Code for Africa and Earth Genome license
 
 Everything in `data/`:
 
@@ -14,7 +14,8 @@ Everything in `data/`:
 - `detection_points.csv`
 - `summary.json`
 
-is released under **Creative Commons Attribution 4.0 International (CC BY 4.0)**.
+is released by Code for Africa and Earth Genome, as joint copyright holders, under
+**Creative Commons Attribution 4.0 International (CC BY 4.0)**.
 
 https://creativecommons.org/licenses/by/4.0/
 
@@ -44,8 +45,10 @@ This repository cannot and does not relicense other people's work.
 | Satellite imagery shown in the map | Esri / Maxar, or Mapbox / Maxar | the provider's terms; attribution is displayed in the map |
 | Protected areas, if a WDPA extract is added under `wdpa/` | UNEP-WCMC and IUCN | **not redistributable** without written permission — see [`wdpa/README.md`](wdpa/README.md) |
 
-The derived figures in `data/` are our own measurements over those inputs, which
-is what makes them ours to license. The inputs themselves are not.
+The derived figures in `data/` are the project's own measurements over those
+inputs, which is what makes them ours to license. The inputs themselves are not:
+Earth Genome is a joint copyright holder here as a partner in this analysis, which
+is separate from the terms on the raw Earth Index surveys listed above.
 
 ## A note on the detections
 

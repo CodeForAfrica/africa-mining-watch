@@ -132,7 +132,8 @@ def main() -> None:
                 "properties": {"name": "urn:ogc:def:crs:OGC:1.3:CRS84"}},
         "metadata": {
             "title": "Mining detections by administrative area",
-            "source": "Africa Mining Watch / Code for Africa",
+            "source": "Africa Mining Watch - Code for Africa and Earth Genome",
+            "licence": "CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
             "detections": "Earth Index (Earth Genome): Congo Basin 2026-06-17, "
                           "West Africa 2026-06-24",
             "boundaries": "geoBoundaries ADM2/ADM3, 14 countries",
