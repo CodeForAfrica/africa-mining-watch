@@ -147,16 +147,27 @@ def main() -> None:
         "features": features,
     }
 
-    path = OUT / "detections_by_admin.geojson"
-    text = json.dumps(fc, ensure_ascii=False, separators=(",", ":"))
-    # trim coordinate precision without touching the structure
     import re
-    text = re.sub(r"-?\d+\.\d{%d,}" % (COORD_DP + 1),
-                  lambda m: f"{float(m.group()):.{COORD_DP}f}".rstrip("0").rstrip("."),
-                  text)
-    path.write_text(text, encoding="utf-8")
-    mb = path.stat().st_size / 1e6
-    print(f"wrote {path.name}: {mb:.2f} MB, {len(features):,} features")
+    trim = re.compile(r"-?\d+\.\d{%d,}" % (COORD_DP + 1))
+
+    def write(name, feats, note):
+        out = dict(fc, features=feats)
+        text = json.dumps(out, ensure_ascii=False, separators=(",", ":"))
+        # trim coordinate precision without touching the structure
+        text = trim.sub(lambda m: f"{float(m.group()):.{COORD_DP}f}".rstrip("0").rstrip("."),
+                        text)
+        p = OUT / name
+        p.write_text(text, encoding="utf-8")
+        print(f"wrote {p.name}: {p.stat().st_size / 1e6:.2f} MB, "
+              f"{len(feats):,} features - {note}")
+
+    write("detections_by_admin.geojson", features,
+          "every area, for QGIS and analysis")
+    # geojson.io and other browser tools stall on 3,615 polygons, and the empty
+    # areas are not what you load a map layer to look at anyway.
+    write("detections_affected_areas.geojson",
+          [f for f in features if f["properties"]["detections"] > 0],
+          "affected areas only, for browser tools")
 
 
 if __name__ == "__main__":

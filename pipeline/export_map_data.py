@@ -187,17 +187,22 @@ def main() -> None:
     # and QGIS can all open a layer straight from one.
     SITE = "https://codeforafrica.github.io/africa-mining-watch/"
     links = []
-    gj = OUT / "detections_by_admin.geojson"
-    if gj.exists():
-        links.append({
-            "f": gj.name,
-            "l": "Map layer: areas with detection counts",
-            "fmt": "GeoJSON",
-            "mb": round(gj.stat().st_size / 1e6, 1),
-            "u": SITE + gj.name,
-            "note": "colour-coded, opens in mapshaper, geojson.io or QGIS",
-        })
-        print(f"  linking {gj.name} ({links[-1]['mb']} MB)")
+    for fname, label, note in (
+        ("detections_affected_areas.geojson",
+         "Map layer: the 994 affected areas",
+         "colour-coded, light enough for geojson.io and mapshaper"),
+        ("detections_by_admin.geojson",
+         "Map layer: all 3,615 areas",
+         "includes areas with no detections, best opened in QGIS"),
+    ):
+        gj = OUT / fname
+        if gj.exists():
+            links.append({
+                "f": fname, "l": label, "fmt": "GeoJSON",
+                "mb": round(gj.stat().st_size / 1e6, 1),
+                "u": SITE + fname, "note": note,
+            })
+            print(f"  linking {fname} ({links[-1]['mb']} MB)")
 
     bounds = adm.total_bounds
     payload = {
