@@ -125,20 +125,8 @@ and the toggle disables itself rather than sitting there dead.
 
 **Deployment.** `.github/workflows/deploy.yml` builds on every push to `main` and
 publishes the Pages artifact directly, injecting `MAPBOX_TOKEN` from repository
-secrets. Nothing carrying a token is ever committed - which is required, not just
-tidy: GitHub push protection blocks Mapbox tokens on any branch. Pages is set to
-deploy from GitHub Actions, so the `gh-pages` branch is no longer used.
-
-The live site uses a `cfa-eric` token restricted to the `codeforafrica.github.io`
-origin, so it is inert if lifted from the page. The main site build will use the
-`earthrise` token, restricted to `africaminingwatch.org`, via the same mechanism.
-
-**On the shared token.** The Africa Mining Watch token on the `earthrise`
-account is restricted to the `africaminingwatch.org` origin - verified: imagery
-with that referer, `403 Forbidden` from GitHub Pages, localhost and no referer.
-It is the right token for the build that ships to the main site, but it cannot
-be used for local testing unless those origins are added to it in the Mapbox
-dashboard. Use a separate unrestricted token for that.
+secrets. Pages is set to deploy from GitHub Actions, so the `gh-pages` branch is
+no longer used.
 
 ## The GeoJSON layers
 
@@ -194,18 +182,8 @@ database on without written permission, so this repository and the published pag
 carry only our derived statistics, and link out to Protected Planet for the
 source boundaries. Keep it that way.
 
-## Before publishing — checklist for maintainers
-
-- [x] Licensing — code MIT, data CC BY 4.0. See [`LICENSE`](LICENSE) and
-      [`LICENSE-DATA.md`](LICENSE-DATA.md). Swap the code licence to GPL-3.0 if
-      you would rather match the org's plurality; it is a one-file change.
-- [x] Geist font licence — `pipeline/fonts/OFL.txt` is in place; the fonts are
-      embedded in `index.html` under the SIL Open Font License 1.1. See
-      [`pipeline/fonts/NOTICE.md`](pipeline/fonts/NOTICE.md).
-- [ ] Confirm with Earth Genome how they want the detection surveys credited.
-
 ## Credits
 
-A collaboration between [Code for Africa](https://codeforafrica.org) and
-[Earth Genome](https://www.earthgenome.org/), joint copyright holders. Detections
-from Earth Index. Part of [Africa Mining Watch](https://africaminingwatch.org).
+A collaboration between [Code for Africa](https://codeforafrica.org) for data
+analysis and [Earth Genome](https://www.earthgenome.org/) for mining detections
+via Earth Index. Part of [Africa Mining Watch](https://africaminingwatch.org).
