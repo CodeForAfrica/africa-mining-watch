@@ -1,0 +1,94 @@
+name: Deploy map to GitHub Pages
+
+# Builds the page and publishes it straight to Pages as an artifact, so the
+# Mapbox token is injected from a repository secret and never enters git.
+# That matters: GitHub push protection blocks Mapbox tokens on any branch push,
+# so committing a built page that carries one is not an option.
+#
+# Requires, once:
+#   1. Settings > Secrets and variables > Actions > New repository secret
+#        MAPBOX_TOKEN = the pk. token, restricted to codeforafrica.github.io
+#   2. Settings > Pages > Source: GitHub Actions
+#
+# With no secret set the build still succeeds and falls back to keyless Esri
+# imagery, so a fork or a secretless clone is never broken by this.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'pipeline/**'
+      - 'data/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # build_page.py is stdlib only - no geopandas needed here, because
+      # data/map_data.json is committed and the heavy analysis is already done.
+      - name: Build the page
+        env:
+          MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
+        run: python3 pipeline/build_page.py
+
+      - name: Assemble the site
+        run: |
+          set -eu
+          mkdir -p _site
+          # a token in the secret makes build_page.py emit index.mapbox.html
+          if [ -f index.mapbox.html ]; then
+            echo "publishing the Mapbox build"
+            cp index.mapbox.html _site/index.html
+          else
+            echo "no MAPBOX_TOKEN secret; publishing the keyless Esri build"
+            cp index.html _site/index.html
+          fi
+          cp data/detections_by_admin.geojson _site/
+          cp data/detections_affected_areas.geojson _site/
+          cp pipeline/fonts/OFL.txt _site/
+          touch _site/.nojekyll
+          ls -la _site
+
+      - name: Sanity-check the artifact
+        run: |
+          set -eu
+          test -s _site/index.html
+          grep -q 'Detections by administrative area' _site/index.html
+          python3 - <<'PY'
+          import json, pathlib
+          for f in ("detections_by_admin.geojson", "detections_affected_areas.geojson"):
+              fc = json.loads(pathlib.Path("_site", f).read_text())
+              assert fc["type"] == "FeatureCollection" and fc["features"], f
+              print(f, len(fc["features"]), "features")
+          PY
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
