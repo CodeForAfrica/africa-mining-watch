@@ -78,45 +78,54 @@ python3 pipeline/build_page.py       # inline payload + fonts into index.html
 
 ## Satellite view
 
-The map has a **Satellite imagery** toggle. Everything else on the page is
-self-contained, but this one layer fetches raster tiles from
-[Esri World Imagery](https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9)
-- no API key, attribution shown on the map whenever the layer is on, as Esri
-require. If the tiles cannot be reached the toggle disables itself rather than
-sitting there doing nothing.
+The map has a **Satellite imagery** toggle. Which tile service it uses is decided
+at load time, by host:
+
+| Served from | Tiles |
+|---|---|
+| `africaminingwatch.org` and its subdomains, **when built with a token** | Mapbox Satellite |
+| anywhere else, or built without a token | Esri World Imagery, no key |
+
+The shared Africa Mining Watch Mapbox token is **origin-restricted to
+africaminingwatch.org**. Verified: it returns imagery with that referer and
+`403 Forbidden` for GitHub Pages, for localhost and with no referer. So a single
+hardcoded provider cannot serve both the test copy and the final home - hence the
+split. Once this page is embedded in the main site it uses the same token as
+everything else there.
+
+Attribution for whichever service is in use is shown on the map whenever the
+layer is on, as both Esri and Mapbox require.
 
 This is why the map is drawn in **Web Mercator** rather than plate carree: tile
-services publish in Mercator, and the imagery would not line up under the
-vectors otherwise. Areas are still measured on Africa Albers - only the display
+services publish in Mercator, and imagery would not line up under the vectors
+otherwise. Areas are still measured on Africa Albers - only the display
 projection changed.
 
-### Testing Mapbox Satellite locally
+### Building the Mapbox version
 
-The tile source is set at build time. Supply a Mapbox **public** token (`pk.`)
-either way round:
+**No Mapbox token is committed to this repository.** GitHub push protection
+blocks Mapbox tokens, and it is right to - a token in git outlives its usefulness
+and is trivially scraped. The token is injected at build time instead:
 
 ```bash
-export MAPBOX_TOKEN=pk.your_token_here     # or:
+export MAPBOX_TOKEN=pk.your_token_here      # or:
 echo 'pk.your_token_here' > pipeline/mapbox_token.txt
 python3 pipeline/build_page.py
 ```
 
-With a token present the build writes **`index.local.html`** instead of
-`index.html`, and prints a reminder. Open that file to test. Both
-`pipeline/mapbox_token.txt` and `*.local.html` are git-ignored, so a token
-cannot reach the repo by accident - and `build_page.py` additionally refuses to
-write `index.html` at all if a token string is found in it.
+That writes **`index.mapbox.html`** - the build to deploy to
+africaminingwatch.org. `index.html`, the one committed and served on GitHub
+Pages, stays keyless. Both `pipeline/mapbox_token.txt` and `*.mapbox.html` are
+git-ignored, and `build_page.py` refuses to write the committed page if any
+Mapbox token is found in it. `sk.` secret tokens are rejected outright: they
+grant account-wide access and must never sit in a page.
 
-Run the build with no token and you get the normal Esri `index.html` back.
+### Testing Mapbox on localhost
 
-A `sk.` secret token is rejected outright: secret tokens grant account-wide
-access and must never be embedded in a web page.
-
-Do not reuse the Mapbox token on the main Africa Mining Watch site - that one
-belongs to Earth Genome and the usage would bill against their account. To
-publish with Mapbox rather than just test locally, use a token restricted to
-the `codeforafrica.github.io` origin in the Mapbox dashboard, since any token
-in a public page is readable by anyone.
+The origin restriction means the shared token returns 403 on localhost. Either
+add `http://localhost:*` to that token's URL restrictions in the Mapbox
+dashboard - which needs access to the `earthrise` account - or build with a
+separate unrestricted development token.
 
 ## The GeoJSON layers
 

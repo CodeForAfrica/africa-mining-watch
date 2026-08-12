@@ -24,18 +24,16 @@ FONTS = {
 }
 
 # ---- satellite tiles ------------------------------------------------------
-# The committed page uses Esri: no key, so nothing secret ever reaches the repo.
-ESRI = {
-    "url": "https://services.arcgisonline.com/ArcGIS/rest/services/"
-           "World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    "attr": "Imagery: Esri, Maxar, Earthstar Geographics and the GIS User Community",
-}
-
-# A Mapbox token is read from $MAPBOX_TOKEN or pipeline/mapbox_token.txt, both
-# of which stay out of git. When one is present the build writes a SEPARATE,
-# git-ignored page, so a token can never end up in the file that gets pushed.
+# No Mapbox token is ever committed. GitHub push protection blocks Mapbox tokens
+# in a repository, and it is right to: a token in git outlives its usefulness and
+# is trivially scraped.
+#
+# A token supplied at build time - via $MAPBOX_TOKEN or mapbox_token.txt, both
+# git-ignored - is baked into a SEPARATE, git-ignored page. That is the build to
+# deploy to africaminingwatch.org, whose origin the shared token is restricted to.
+# With no token the committed page falls back to keyless Esri on every host.
 TOKEN_FILE = HERE / "mapbox_token.txt"
-LOCAL_OUTPUT = "index.local.html"
+TOKEN_OUTPUT = "index.mapbox.html"
 
 
 def mapbox_token() -> str | None:
@@ -56,14 +54,14 @@ def mapbox_token() -> str | None:
 
 
 def tile_config():
-    """(url, attribution, output filename, is_local)."""
+    """(mapbox token, output filename, has_token).
+
+    With no token the page falls back to keyless Esri on every host.
+    """
     tok = mapbox_token()
     if not tok:
-        return ESRI["url"], ESRI["attr"], "index.html", False
-    url = ("https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}@2x.jpg90"
-           "?access_token=" + tok)
-    attr = "Imagery: Mapbox, Maxar; map data (c) OpenStreetMap contributors"
-    return url, attr, LOCAL_OUTPUT, True
+        return "", "index.html", False
+    return tok, TOKEN_OUTPUT, True
 
 
 def main() -> None:
@@ -83,10 +81,11 @@ def main() -> None:
         out = out.replace(token, base64.b64encode(raw).decode("ascii"))
         print(f"  inlined {path.name}: {len(raw) / 1024:.0f} KB")
 
-    tile_url, tile_attr, out_name, is_local = tile_config()
-    for token, value in (("__TILE_URL__", tile_url), ("__TILE_ATTR__", tile_attr)):
-        assert token in out, f"template lost {token}"
-        out = out.replace(token, value)
+    tok, out_name, has_token = tile_config()
+    assert "__MAPBOX_TOKEN__" in out, "template lost __MAPBOX_TOKEN__"
+    out = out.replace("__MAPBOX_TOKEN__", tok)
+    for ph in ("__TILE_URL__", "__TILE_ATTR__"):
+        out = out.replace(ph, "")
 
     non_ascii = sorted({c for c in out if ord(c) > 127})
     assert not non_ascii, f"non-ascii leaked into the page: {non_ascii}"
@@ -94,20 +93,19 @@ def main() -> None:
     path = ROOT / out_name
     # Belt and braces: whatever happens above, the committed page must not
     # carry a credential.
-    if not is_local:
-        leaked = re.findall(r"\b(?:pk|sk)\.[A-Za-z0-9._-]{20,}", out)
-        assert not leaked, "a Mapbox token reached the committed page - refusing to write"
-        assert "access_token" not in out, "access_token reached the committed page"
+    if not has_token:
+        stray = re.findall(r"\b(?:pk|sk)\.[A-Za-z0-9._-]{20,}", out)
+        assert not stray, "a Mapbox token reached the committed page - refusing to write"
 
     path.write_text(out, encoding="ascii")
     print(f"wrote {path.name}: {path.stat().st_size / 1e6:.2f} MB")
-    if is_local:
-        print(f"  tiles: Mapbox Satellite (token from "
+    if has_token:
+        print(f"  tiles: Mapbox on africaminingwatch.org, Esri elsewhere (token from "
               f"{'$MAPBOX_TOKEN' if os.environ.get('MAPBOX_TOKEN') else TOKEN_FILE.name})")
-        print(f"  NOTE: {path.name} contains your token. It is git-ignored - do not")
-        print(f"        commit it or serve it publicly. The committed page still uses Esri.")
+        print(f"  NOTE: {path.name} carries the token and is git-ignored.")
+        print(f"        This is the build to deploy to africaminingwatch.org.")
     else:
-        print("  tiles: Esri World Imagery (no key)")
+        print("  tiles: Esri World Imagery on every host (no token supplied)")
 
 
 if __name__ == "__main__":

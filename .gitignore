@@ -9,6 +9,7 @@ wdpa/*                                # WDPA extracts (licence-gated)
 # public repo gets scraped, so neither of these may ever be committed.
 pipeline/mapbox_token.txt
 *.local.html
+*.mapbox.html
 
 __pycache__/
 *.pyc

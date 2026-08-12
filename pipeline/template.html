@@ -719,8 +719,37 @@
      no API key, attribution required and shown whenever the layer is on.
      Tiles are Web Mercator squares of side 360/2^z in this coordinate space,
      which is why the map is drawn in Mercator at all. */
-  var TILE_URL = "__TILE_URL__";
-  var TILE_ATTR = "__TILE_ATTR__";
+  /* The Mapbox token is injected at build time, never committed - GitHub's push
+     protection blocks Mapbox tokens in a repo, and rightly so. Build with
+     MAPBOX_TOKEN set to produce the Africa Mining Watch page; without it this
+     stays empty and every host falls back to keyless Esri.
+
+     The shared AMW token is origin-restricted to africaminingwatch.org, so even
+     with a token baked in the page only uses Mapbox on that domain. */
+  var AMW_MAPBOX_TOKEN = "__MAPBOX_TOKEN__";
+  var MAPBOX_HOSTS = ["africaminingwatch.org"];
+  var MAPBOX_ATTR = "Imagery: Mapbox, Maxar; map data (c) OpenStreetMap contributors";
+  var ESRI_URL = "https://services.arcgisonline.com/ArcGIS/rest/services/" +
+                 "World_Imagery/MapServer/tile/{z}/{y}/{x}";
+  var ESRI_ATTR = "Imagery: Esri, Maxar, Earthstar Geographics and the GIS User Community";
+
+  var FORCED_URL = "__TILE_URL__";      // set only when a token was given at build time
+  var FORCED_ATTR = "__TILE_ATTR__";
+
+  function pickTiles() {
+    if (FORCED_URL) return { url: FORCED_URL, attr: FORCED_ATTR };
+    var h = (location.hostname || "").toLowerCase();
+    var onAMW = MAPBOX_HOSTS.some(function (d) { return h === d || h.slice(-(d.length + 1)) === "." + d; });
+    if (onAMW && AMW_MAPBOX_TOKEN) {
+      return { url: "https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}@2x.jpg90" +
+                    "?access_token=" + AMW_MAPBOX_TOKEN, attr: MAPBOX_ATTR };
+    }
+    return { url: ESRI_URL, attr: ESRI_ATTR };
+  }
+
+  var TILES = pickTiles();
+  var TILE_URL = TILES.url;
+  var TILE_ATTR = TILES.attr;
   var gTiles = el("g", { class: "tiles" });
   gRoot.appendChild(gTiles);
   var tileCache = {};          // key -> <image>, so panning back is instant
