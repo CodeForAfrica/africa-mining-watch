@@ -50,6 +50,10 @@ docs/                   method, caveats, and the design tokens
 | Africa outline | [Natural Earth](https://www.naturalearthdata.com/) countries | public domain |
 | Protected areas *(optional)* | [WDPA](https://www.protectedplanet.net/), UNEP-WCMC & IUCN | not redistributable — see below |
 
+**Licence:** the code is MIT, the derived tables in `data/` are CC BY 4.0, and
+neither covers the third-party inputs above. See [`LICENSE`](LICENSE) and
+[`LICENSE-DATA.md`](LICENSE-DATA.md).
+
 Areas are measured on ESRI:102022 (Africa Albers Equal Area Conic), checked
 against geodesic areas to within 0.000%.
 
@@ -192,7 +196,9 @@ source boundaries. Keep it that way.
 
 ## Before publishing — checklist for maintainers
 
-- [ ] Add a `LICENSE` for the code and data in this repo (not chosen here — CfA's call).
+- [x] Licensing — code MIT, data CC BY 4.0. See [`LICENSE`](LICENSE) and
+      [`LICENSE-DATA.md`](LICENSE-DATA.md). Swap the code licence to GPL-3.0 if
+      you would rather match the org's plurality; it is a one-file change.
 - [x] Geist font licence — `pipeline/fonts/OFL.txt` is in place; the fonts are
       embedded in `index.html` under the SIL Open Font License 1.1. See
       [`pipeline/fonts/NOTICE.md`](pipeline/fonts/NOTICE.md).
