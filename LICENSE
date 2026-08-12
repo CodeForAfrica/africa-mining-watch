@@ -1,16 +1,3 @@
-This repository holds two different kinds of material, licensed differently.
-
-  Code   - the analysis pipeline and the page: MIT License, in full below.
-  Data   - the derived tables in data/: Creative Commons Attribution 4.0.
-           See LICENSE-DATA.md.
-
-Neither covers the third-party material this work is built on. The mining
-detections belong to Earth Genome, the administrative boundaries to
-geoBoundaries, and the bundled typefaces to Vercel under the SIL Open Font
-License. Those keep their own terms; see LICENSE-DATA.md for each.
-
--------------------------------------------------------------------------------
-
 MIT License
 
 Copyright (c) 2026 Code for Africa
@@ -32,3 +19,24 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+-------------------------------------------------------------------------------
+SCOPE - PLEASE READ
+
+The MIT licence above covers the *code* in this repository: the analysis
+pipeline in pipeline/ and the page it builds.
+
+It does NOT cover:
+
+  * The derived data in data/ - the CSVs, the GeoJSON layers and summary.json.
+    Those are licensed Creative Commons Attribution 4.0 International, which
+    requires attribution. See LICENSE-DATA.md.
+
+  * Third-party material this work is built on and does not own: the Earth Index
+    mining detections (Earth Genome), the administrative boundaries
+    (geoBoundaries, CC BY 4.0), the bundled Geist typefaces (Vercel, SIL Open
+    Font License 1.1, see pipeline/fonts/OFL.txt), the satellite imagery shown
+    in the map (Esri or Mapbox, per their terms), and any WDPA protected-areas
+    extract, which UNEP-WCMC do not permit to be redistributed at all.
+
+LICENSE-DATA.md sets out each of these.
