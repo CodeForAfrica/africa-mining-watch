@@ -90,10 +90,33 @@ services publish in Mercator, and the imagery would not line up under the
 vectors otherwise. Areas are still measured on Africa Albers - only the display
 projection changed.
 
-To swap in Mapbox Satellite or another provider, change `TILE_URL` and
-`TILE_ATTR` near the top of the map code in `pipeline/template.html`. A Mapbox
-style would need a CfA access token; do not reuse the one on the main Africa
-Mining Watch site, which belongs to Earth Genome.
+### Testing Mapbox Satellite locally
+
+The tile source is set at build time. Supply a Mapbox **public** token (`pk.`)
+either way round:
+
+```bash
+export MAPBOX_TOKEN=pk.your_token_here     # or:
+echo 'pk.your_token_here' > pipeline/mapbox_token.txt
+python3 pipeline/build_page.py
+```
+
+With a token present the build writes **`index.local.html`** instead of
+`index.html`, and prints a reminder. Open that file to test. Both
+`pipeline/mapbox_token.txt` and `*.local.html` are git-ignored, so a token
+cannot reach the repo by accident - and `build_page.py` additionally refuses to
+write `index.html` at all if a token string is found in it.
+
+Run the build with no token and you get the normal Esri `index.html` back.
+
+A `sk.` secret token is rejected outright: secret tokens grant account-wide
+access and must never be embedded in a web page.
+
+Do not reuse the Mapbox token on the main Africa Mining Watch site - that one
+belongs to Earth Genome and the usage would bill against their account. To
+publish with Mapbox rather than just test locally, use a token restricted to
+the `codeforafrica.github.io` origin in the Mapbox dashboard, since any token
+in a public page is readable by anyone.
 
 ## The GeoJSON layers
 

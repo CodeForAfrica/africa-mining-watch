@@ -5,6 +5,11 @@ GeoJSON boundaries - simplified.json  # geoBoundaries ADM2/ADM3 (29 MB)
 wdpa/*                                # WDPA extracts (licence-gated)
 !wdpa/README.md
 
+# Mapbox access token and the local-only page built with it. A pk. token in a
+# public repo gets scraped, so neither of these may ever be committed.
+pipeline/mapbox_token.txt
+*.local.html
+
 __pycache__/
 *.pyc
 .DS_Store

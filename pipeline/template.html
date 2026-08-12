@@ -719,9 +719,8 @@
      no API key, attribution required and shown whenever the layer is on.
      Tiles are Web Mercator squares of side 360/2^z in this coordinate space,
      which is why the map is drawn in Mercator at all. */
-  var TILE_URL = "https://services.arcgisonline.com/ArcGIS/rest/services/" +
-                 "World_Imagery/MapServer/tile/{z}/{y}/{x}";
-  var TILE_ATTR = "Imagery: Esri, Maxar, Earthstar Geographics and the GIS User Community";
+  var TILE_URL = "__TILE_URL__";
+  var TILE_ATTR = "__TILE_ATTR__";
   var gTiles = el("g", { class: "tiles" });
   gRoot.appendChild(gTiles);
   var tileCache = {};          // key -> <image>, so panning back is instant
