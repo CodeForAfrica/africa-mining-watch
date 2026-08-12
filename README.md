@@ -26,7 +26,7 @@ single dissolved polygon accounts for 20% of all detected area, and that
 ## What is here
 
 ```
-index.html              the map, self-contained, no network dependencies
+index.html              the map; self-contained apart from the optional satellite layer
 data/                   the derived tables - every figure on the page
   detections_by_admin.csv       994 rows, one per affected administrative area
   detections_by_admin.geojson   all 3,615 areas with counts, colour-coded
@@ -75,6 +75,25 @@ python3 pipeline/build_page.py       # inline payload + fonts into index.html
 
 `data/map_data.json` is committed, so `build_page.py` alone will regenerate
 `index.html` without needing the raw source data.
+
+## Satellite view
+
+The map has a **Satellite imagery** toggle. Everything else on the page is
+self-contained, but this one layer fetches raster tiles from
+[Esri World Imagery](https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9)
+- no API key, attribution shown on the map whenever the layer is on, as Esri
+require. If the tiles cannot be reached the toggle disables itself rather than
+sitting there doing nothing.
+
+This is why the map is drawn in **Web Mercator** rather than plate carree: tile
+services publish in Mercator, and the imagery would not line up under the
+vectors otherwise. Areas are still measured on Africa Albers - only the display
+projection changed.
+
+To swap in Mapbox Satellite or another provider, change `TILE_URL` and
+`TILE_ATTR` near the top of the map code in `pipeline/template.html`. A Mapbox
+style would need a CfA access token; do not reuse the one on the main Africa
+Mining Watch site, which belongs to Earth Genome.
 
 ## The GeoJSON layers
 

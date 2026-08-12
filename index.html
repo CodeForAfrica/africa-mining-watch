@@ -221,6 +221,26 @@
     border: 1px solid var(--rule); border-radius: 4px; cursor: pointer;
   }
   .zbtn:hover { color: var(--ink); border-color: var(--muted); }
+  /* Esri require attribution wherever their imagery is shown */
+  .satattr {
+    position: absolute; right: 50px; bottom: 14px; max-width: 40ch;
+    font-family: var(--mono); font-size: 9.5px; line-height: 1.4; text-align: right;
+    color: var(--ink-2);
+    background: color-mix(in srgb, var(--surface) 82%, transparent);
+    border-radius: 3px; padding: 3px 6px; pointer-events: none;
+  }
+  /* with imagery underneath, the land fills get out of the way and the
+     choropleth goes translucent so the ground shows through */
+  /* .cont.surveyed is declared later with equal specificity, so these have to
+     out-specify it rather than just come first */
+  .sat .cont, .sat .cont.surveyed, .sat .country-outline { fill: none; }
+  .sat .cont { stroke: rgba(255,255,255,.28); }
+  .sat .country-outline { stroke: rgba(255,255,255,.55); }
+  /* light enough that the ground reads through - the imagery is the point of
+     this mode, so the choropleth drops to a tint and the outlines carry it */
+  .sat .adm { fill-opacity: .3; stroke: rgba(255,255,255,.5); stroke-width: .8; }
+  .sat .adm.sel, .sat .country-outline.sel, .sat .cont.surveyed.sel { stroke: #fff; }
+
   .zoomhint kbd {
     font-family: var(--mono); font-size: 9.5px; border: 1px solid var(--rule);
     border-radius: 3px; padding: 0 3px; color: var(--ink-2);
@@ -465,6 +485,7 @@
           <option value="cb">Congo Basin only</option>
         </select>
       </label>
+      <label class="toggle"><input type="checkbox" id="showsatellite"> Satellite imagery</label>
       <label class="toggle" id="paToggleWrap" hidden>
         <input type="checkbox" id="showprotected"> Show protected areas
       </label>
@@ -514,6 +535,7 @@
           </div>
         </div>
       </div>
+      <div class="satattr" id="lg-sat" hidden></div>
       <div id="tip" role="tooltip"></div>
     </div>
   </section>
@@ -602,7 +624,7 @@
   // clusters ship off and the control is disabled: the choropleth already
   // encodes intensity, and the markers were covering the areas underneath
   var state = { metric: "d", region: "all", dots: false, clusters: false,
-                protected: false, hot: -1, sel: -1, selIso: null };
+                protected: false, satellite: false, hot: -1, sel: -1, selIso: null };
 
   // u.g: 0 = West Africa survey only, 1 = Congo Basin only, 2 = both
   function inRegion(u) {
@@ -652,8 +674,22 @@
   var svg = document.getElementById("map");
   var SVGNS = "http://www.w3.org/2000/svg";
   var B = DATA.meta.bounds;                 // [minLon, minLat, maxLon, maxLat]
+
+  // Web Mercator, expressed in degrees so x stays plain longitude. Every
+  // satellite tile service publishes in this projection, so drawing in it is
+  // what lets imagery sit under the vectors without warping.
+  //   x = lon                      in [-180, 180]
+  //   y = -mercY(lat)              in [-180, 180] at the clip latitudes
+  function mercY(lat) {
+    var l = Math.max(-85.05112878, Math.min(85.05112878, lat));
+    return (180 / Math.PI) * Math.log(Math.tan(Math.PI / 4 + l * Math.PI / 360));
+  }
+  function projY(lat) { return -mercY(lat); }
+
   var PAD = 0.4;
-  var VB = { x: B[0] - PAD, y: -(B[3] + PAD), w: (B[2] - B[0]) + PAD * 2, h: (B[3] - B[1]) + PAD * 2 };
+  var yTop = projY(B[3] + PAD), yBot = projY(B[1] - PAD);
+  var VB = { x: B[0] - PAD, y: yTop,
+             w: (B[2] - B[0]) + PAD * 2, h: yBot - yTop };
   svg.setAttribute("viewBox", VB.x + " " + VB.y + " " + VB.w + " " + VB.h);
   svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
   // let the frame take the map's own proportions instead of letterboxing it
@@ -668,8 +704,8 @@
     var d = "";
     for (var i = 0; i < rings.length; i++) {
       var r = rings[i];
-      d += "M" + r[0] + "," + (-r[1]);
-      for (var j = 2; j < r.length; j += 2) d += "L" + r[j] + "," + (-r[j + 1]);
+      d += "M" + r[0] + "," + projY(r[1]).toFixed(4);
+      for (var j = 2; j < r.length; j += 2) d += "L" + r[j] + "," + projY(r[j + 1]).toFixed(4);
       d += "Z";
     }
     return d;
@@ -677,6 +713,91 @@
 
   var gRoot = el("g", {});
   svg.appendChild(gRoot);
+
+  /* ---- satellite tiles -------------------------------------------------
+     The only part of this page that needs the network. Esri World Imagery,
+     no API key, attribution required and shown whenever the layer is on.
+     Tiles are Web Mercator squares of side 360/2^z in this coordinate space,
+     which is why the map is drawn in Mercator at all. */
+  var TILE_URL = "https://services.arcgisonline.com/ArcGIS/rest/services/" +
+                 "World_Imagery/MapServer/tile/{z}/{y}/{x}";
+  var TILE_ATTR = "Imagery: Esri, Maxar, Earthstar Geographics and the GIS User Community";
+  var gTiles = el("g", { class: "tiles" });
+  gRoot.appendChild(gTiles);
+  var tileCache = {};          // key -> <image>, so panning back is instant
+  var tilesFailed = 0;
+
+  function tileZoom() {
+    var r = svg.getBoundingClientRect();
+    if (!r.width) return 3;
+    // aim for tiles near their native 256px on screen
+    var pxPerUnit = (r.width / VB.w) * view.k;
+    var n = 360 * pxPerUnit / 256;
+    return Math.max(2, Math.min(17, Math.round(Math.log(n) / Math.LN2)));
+  }
+
+  function updateTiles() {
+    if (!state.satellite) { gTiles.style.display = "none"; return; }
+    gTiles.style.display = "";
+
+    var r = svg.getBoundingClientRect();
+    if (!r.width) return;
+    // visible rectangle in user units, by inverting the pan/zoom transform
+    var s = Math.max(VB.w / r.width, VB.h / r.height);
+    var ox = VB.x + (VB.w - r.width * s) / 2, oy = VB.y + (VB.h - r.height * s) / 2;
+    var x0 = (ox - view.x) / view.k, y0 = (oy - view.y) / view.k;
+    var x1 = (ox + r.width * s - view.x) / view.k;
+    var y1 = (oy + r.height * s - view.y) / view.k;
+
+    var z = tileZoom(), n = 1 << z, size = 360 / n;
+    var tx0 = Math.max(0, Math.floor((x0 + 180) / size));
+    var tx1 = Math.min(n - 1, Math.floor((x1 + 180) / size));
+    var ty0 = Math.max(0, Math.floor((y0 + 180) / size));
+    var ty1 = Math.min(n - 1, Math.floor((y1 + 180) / size));
+    if ((tx1 - tx0 + 1) * (ty1 - ty0 + 1) > 400) return;   // sanity guard
+
+    var wanted = {};
+    for (var tx = tx0; tx <= tx1; tx++) {
+      for (var ty = ty0; ty <= ty1; ty++) {
+        var key = z + "/" + tx + "/" + ty;
+        wanted[key] = 1;
+        if (tileCache[key]) continue;
+        // a hair of overlap, or sub-pixel rounding leaves seams between tiles
+        var img = el("image", {
+          x: -180 + tx * size, y: -180 + ty * size,
+          width: size * 1.002, height: size * 1.002,
+          preserveAspectRatio: "none",
+          href: TILE_URL.replace("{z}", z).replace("{x}", tx).replace("{y}", ty)
+        });
+        img.addEventListener("error", function () {
+          tilesFailed++;
+          if (tilesFailed === 4) satelliteUnavailable();
+        });
+        tileCache[key] = img;
+        gTiles.appendChild(img);
+      }
+    }
+    // drop tiles from other zoom levels once this one is populated
+    Object.keys(tileCache).forEach(function (k) {
+      if (!wanted[k] && k.indexOf(z + "/") !== 0) {
+        if (tileCache[k].parentNode) tileCache[k].parentNode.removeChild(tileCache[k]);
+        delete tileCache[k];
+      }
+    });
+  }
+
+  // The published-artifact copy runs under a CSP that blocks external hosts, so
+  // the layer simply cannot load there. Say so rather than showing a dead toggle.
+  function satelliteUnavailable() {
+    state.satellite = false;
+    var box = document.getElementById("showsatellite");
+    box.checked = false; box.disabled = true;
+    box.closest(".toggle").classList.add("is-off");
+    box.closest(".toggle").title = "Satellite imagery could not be loaded here";
+    svg.classList.remove("sat");
+    gTiles.style.display = "none";
+    document.getElementById("lg-sat").hidden = true;
+  }
 
   // layer 0 \u2014 the whole continent, so the survey reads as a slice of Africa
   var gCont = el("g", {});
@@ -736,7 +857,7 @@
   gRoot.appendChild(gDots);
   function dotPath(pts) {
     var d = "";
-    for (var i = 0; i < pts.length; i++) d += "M" + pts[i][0] + "," + (-pts[i][1]) + "h0";
+    for (var i = 0; i < pts.length; i++) d += "M" + pts[i][0] + "," + projY(pts[i][1]).toFixed(4) + "h0";
     return d;
   }
   var dotWA = el("path", { d: dotPath(DATA.points.wa), class: "dots", stroke: "var(--reg-wa)",
@@ -750,7 +871,7 @@
   gRoot.appendChild(gHalo); gRoot.appendChild(gClu);
   var haloNodes = [], cluNodes = [];
   UNITS.forEach(function (u, i) {
-    var d = "M" + u.x + "," + (-u.y) + "h0";
+    var d = "M" + u.x + "," + projY(u.y).toFixed(4) + "h0";
     var h = el("path", { d: d, class: "halo", "vector-effect": "non-scaling-stroke" });
     var c = el("path", { d: d, class: "clu", "vector-effect": "non-scaling-stroke" });
     c.__i = i;
@@ -788,6 +909,13 @@
     document.getElementById("lg-protected").hidden = !state.protected;
 
     gDots.style.display = state.dots ? "" : "none";
+    // over imagery the footprints are the whole story, so give them more weight
+    var dotW = state.satellite ? 3.2 : 2.2;
+    dotWA.setAttribute("stroke-width", dotW);
+    dotCB.setAttribute("stroke-width", dotW);
+    dotWA.setAttribute("stroke-opacity", state.satellite ? 1 : .75);
+    dotCB.setAttribute("stroke-opacity", state.satellite ? 1 : .75);
+
     dotWA.style.display = (state.region === "cb") ? "none" : "";
     dotCB.style.display = (state.region === "wa") ? "none" : "";
     document.getElementById("lg-regions").hidden = !state.dots;
@@ -816,8 +944,19 @@
 
   /* ---------------- pan & zoom ---------------- */
   var view = { k: 1, x: 0, y: 0 };
+  // Debounced rather than rAF-driven: a backgrounded tab never gets a frame,
+  // which would leave a pending tick set and the tiles permanently stale. It
+  // also means a drag fetches tiles once it settles instead of every frame.
+  var tileTimer = 0;
+  function scheduleTiles() {
+    if (!state.satellite) return;
+    clearTimeout(tileTimer);
+    tileTimer = setTimeout(updateTiles, 80);
+  }
+
   function applyView() {
     gRoot.setAttribute("transform", "translate(" + view.x + "," + view.y + ") scale(" + view.k + ")");
+    scheduleTiles();
   }
   function svgPoint(evt) {
     var r = svg.getBoundingClientRect();
@@ -831,11 +970,14 @@
   // scaling below 1. MINK is a little under the fit-Africa scale (~0.39).
   var MINK = 0.3;
 
+  // b is [minLon, minLat, maxLon, maxLat]; the vertical span has to go through
+  // the projection, since a degree of latitude is not a fixed height in Mercator
   function fitBounds(b, pad) {
-    var w = b[2] - b[0], h = b[3] - b[1];
+    var top = projY(b[3]), bot = projY(b[1]);
+    var w = b[2] - b[0], h = bot - top;
     var k = Math.min(VB.w / w, VB.h / h) * (1 - (pad || 0));
     k = Math.min(60, Math.max(MINK, k));
-    var cx = (b[0] + b[2]) / 2, cy = -(b[1] + b[3]) / 2;
+    var cx = (b[0] + b[2]) / 2, cy = (top + bot) / 2;
     view.k = k;
     view.x = (VB.x + VB.w / 2) - k * cx;
     view.y = (VB.y + VB.h / 2) - k * cy;
@@ -1299,11 +1441,20 @@
   document.getElementById("foot").innerHTML =
     "Detections: " + esc(S.sources.congo_basin) + " \u00b7 " + esc(S.sources.west_africa) + "<br>" +
     "Boundaries: " + esc(S.sources.boundaries) + " (geoBoundaries ADM2/ADM3, " + fmt(S.admin_units_total) + " units, " + fmt(S.survey_area_km2) + " km\u00b2)<br>" +
-    "Areas measured on " + esc(S.sources.equal_area_crs) + " (Africa Albers Equal Area Conic); map drawn on an equirectangular grid.";
+    "Areas measured on " + esc(S.sources.equal_area_crs) + " (Africa Albers Equal Area Conic); map drawn on Web Mercator.";
 
   /* ---------------- wire up ---------------- */
   document.getElementById("metric").addEventListener("change", function (e) { state.metric = e.target.value; paint(); });
   document.getElementById("region").addEventListener("change", function (e) { state.region = e.target.value; paint(); });
+  document.getElementById("showsatellite").addEventListener("change", function (e) {
+    state.satellite = e.target.checked;
+    svg.classList.toggle("sat", state.satellite);
+    var attr = document.getElementById("lg-sat");
+    attr.hidden = !state.satellite;
+    attr.textContent = TILE_ATTR;
+    updateTiles();
+    paint();                    // dot weight depends on the mode
+  });
   document.getElementById("showprotected").addEventListener("change", function (e) { state.protected = e.target.checked; paint(); });
   document.getElementById("showdots").addEventListener("change", function (e) { state.dots = e.target.checked; paint(); });
   document.getElementById("showclusters").addEventListener("change", function (e) { state.clusters = e.target.checked; paint(); });
