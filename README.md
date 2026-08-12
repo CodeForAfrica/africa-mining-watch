@@ -76,23 +76,38 @@ python3 pipeline/build_page.py       # inline payload + fonts into index.html
 `data/map_data.json` is committed, so `build_page.py` alone will regenerate
 `index.html` without needing the raw source data.
 
-## The GeoJSON layer
+## The GeoJSON layers
 
-`data/detections_by_admin.geojson` carries all 3,615 administrative areas with
-their detection counts, mined hectares, share of area and the rest. It is also
-served next to the map, so these tools can open it straight from the URL:
+Two files, both served next to the map so **mapshaper**, **geojson.io** and
+**QGIS** can open them straight from a URL:
 
+| File | Features | Size | For |
+|---|---|---|---|
+| `detections_affected_areas.geojson` | 994 | 2.5 MB | the areas that have detections - start here |
+| `detections_by_admin.geojson` | 3,615 | 7.1 MB | every surveyed area, including `detections: 0` |
+
+    https://codeforafrica.github.io/africa-mining-watch/detections_affected_areas.geojson
     https://codeforafrica.github.io/africa-mining-watch/detections_by_admin.geojson
 
-It ships styling two ways. simplestyle-spec fields (`fill`, `stroke`, `title`,
-`description`) mean **geojson.io** and Mapbox render it colour-coded on open,
-using the same bins and ramp as the map. A `bin` index (`-1` for none, `0`-`6`
-for the ramp steps) plus the raw numbers let **QGIS** and **mapshaper** drive
-their own categorised or graduated styling.
+Styling travels with them two ways. simplestyle-spec fields (`fill`, `stroke`,
+`title`, `description`) mean the file renders colour-coded on open, using the
+same bins and ramp as the map. A `bin` index (`-1` for none, `0`-`6` for the
+ramp steps) plus the raw numbers let QGIS and mapshaper drive their own
+categorised or graduated styling instead.
 
-Areas with no detections are included, with `detections: 0`, so the file
-describes the whole surveyed footprint. Filter on `detections > 0` for just the
-994 affected ones.
+Properties per feature: `shape_id`, `name`, `level`, `country`, `iso3`,
+`detections`, `sites_hosted`, `mined_area_ha`, `largest_patch_ha`, `area_km2`,
+`pct_area_mined`, `detections_per_1000km2`, `survey`, `bin`.
+
+**Tool notes.** mapshaper renders either file colour-coded straight from the
+URL. geojson.io ingests them and zooms to their extent, but its map preview did
+not paint the polygons in testing, at either size - the data is there in its
+JSON and Table panels, so it still works for inspection and export. QGIS handles
+both without complaint; use the larger one there.
+
+`sites_hosted` sums to exactly 12,874, the distinct footprint count.
+`detections` sums higher, because a footprint straddling a boundary is counted
+in each area it reaches.
 
 Regenerate with `python3 pipeline/export_geojson.py`.
 
