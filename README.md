@@ -5,6 +5,10 @@ the Congo Basin, and how unevenly it is spread.
 
 **Live map:** https://codeforafrica.github.io/africa-mining-watch/
 
+Published by GitHub Actions on every push to `main` - see
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml). The Mapbox token
+comes from the `MAPBOX_TOKEN` repository secret and is never committed.
+
 Two Earth Index surveys mapped the ground scars left by mining across fourteen
 countries. This repository holds the interactive map built from them, the tables
 every figure on it comes from, and the pipeline that produced both.
@@ -114,6 +118,16 @@ and must never sit in a page.
 
 If a token does not work on the origin the page is served from, the tiles 403,
 and the toggle disables itself rather than sitting there dead.
+
+**Deployment.** `.github/workflows/deploy.yml` builds on every push to `main` and
+publishes the Pages artifact directly, injecting `MAPBOX_TOKEN` from repository
+secrets. Nothing carrying a token is ever committed - which is required, not just
+tidy: GitHub push protection blocks Mapbox tokens on any branch. Pages is set to
+deploy from GitHub Actions, so the `gh-pages` branch is no longer used.
+
+The live site uses a `cfa-eric` token restricted to the `codeforafrica.github.io`
+origin, so it is inert if lifted from the page. The main site build will use the
+`earthrise` token, restricted to `africaminingwatch.org`, via the same mechanism.
 
 **On the shared token.** The Africa Mining Watch token on the `earthrise`
 account is restricted to the `africaminingwatch.org` origin - verified: imagery
