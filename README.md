@@ -28,10 +28,11 @@ single dissolved polygon accounts for 20% of all detected area, and that
 ```
 index.html              the map, self-contained, no network dependencies
 data/                   the derived tables - every figure on the page
-  detections_by_admin.csv      994 rows, one per affected administrative area
-  detections_by_country.csv    14 rows
-  detection_points.csv         12,874 rows, one interior point per footprint
-  summary.json                 headline figures, machine-readable
+  detections_by_admin.csv       994 rows, one per affected administrative area
+  detections_by_admin.geojson   all 3,615 areas with counts, colour-coded
+  detections_by_country.csv     14 rows
+  detection_points.csv          12,874 rows, one interior point per footprint
+  summary.json                  headline figures, machine-readable
 pipeline/               the analysis, re-runnable
 docs/                   method, caveats, and the design tokens
 ```
@@ -74,6 +75,26 @@ python3 pipeline/build_page.py       # inline payload + fonts into index.html
 
 `data/map_data.json` is committed, so `build_page.py` alone will regenerate
 `index.html` without needing the raw source data.
+
+## The GeoJSON layer
+
+`data/detections_by_admin.geojson` carries all 3,615 administrative areas with
+their detection counts, mined hectares, share of area and the rest. It is also
+served next to the map, so these tools can open it straight from the URL:
+
+    https://codeforafrica.github.io/africa-mining-watch/detections_by_admin.geojson
+
+It ships styling two ways. simplestyle-spec fields (`fill`, `stroke`, `title`,
+`description`) mean **geojson.io** and Mapbox render it colour-coded on open,
+using the same bins and ramp as the map. A `bin` index (`-1` for none, `0`-`6`
+for the ramp steps) plus the raw numbers let **QGIS** and **mapshaper** drive
+their own categorised or graduated styling.
+
+Areas with no detections are included, with `detections: 0`, so the file
+describes the whole surveyed footprint. Filter on `detections > 0` for just the
+994 affected ones.
+
+Regenerate with `python3 pipeline/export_geojson.py`.
 
 ## Protected areas
 

@@ -183,6 +183,22 @@ def main() -> None:
             downloads.append({"f": fname, "l": label, "t": f.read_text()})
     print(f"  embedding {len(downloads)} downloadable tables")
 
+    # Too big to inline, and more useful as a URL anyway: mapshaper, geojson.io
+    # and QGIS can all open a layer straight from one.
+    SITE = "https://codeforafrica.github.io/africa-mining-watch/"
+    links = []
+    gj = OUT / "detections_by_admin.geojson"
+    if gj.exists():
+        links.append({
+            "f": gj.name,
+            "l": "Map layer: areas with detection counts",
+            "fmt": "GeoJSON",
+            "mb": round(gj.stat().st_size / 1e6, 1),
+            "u": SITE + gj.name,
+            "note": "colour-coded, opens in mapshaper, geojson.io or QGIS",
+        })
+        print(f"  linking {gj.name} ({links[-1]['mb']} MB)")
+
     bounds = adm.total_bounds
     payload = {
         "meta": {
@@ -194,6 +210,7 @@ def main() -> None:
         "continent": continent_layer,
         "protected": protected,
         "downloads": downloads,
+        "links": links,
         "countries": country_layer,
         "units": unit_layer,
         "points": point_layer,

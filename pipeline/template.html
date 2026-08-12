@@ -379,6 +379,17 @@
     background: none; border: 1px dashed var(--rule);
   }
   .dl-source .dl-name::after { content: " \2197"; }
+  .dl-geo { cursor: default; gap: 6px; }
+  .dl-geo .dl-name { color: var(--focus); text-decoration: none; cursor: pointer; }
+  .dl-geo .dl-name:hover { text-decoration: underline; }
+  .dl-copy {
+    align-self: flex-start; margin-top: 2px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-2);
+    background: none; border: 1px solid var(--rule); border-radius: 3px;
+    padding: 3px 7px; cursor: pointer;
+  }
+  .dl-copy:hover { color: var(--ink); border-color: var(--muted); }
 
   /* ---------- notes ---------- */
   .notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: 6px; overflow: hidden; }
@@ -1193,6 +1204,8 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
   }
 
+  var LINKS = DATA.links || [];
+
   (function renderDownloads() {
     var host = document.getElementById("downloads");
     var html = DL.map(function (d, i) {
@@ -1202,6 +1215,17 @@
         '<span class="dl-name">' + esc(d.l) + "</span>" +
         '<span class="dl-meta">CSV &middot; ' + fmt(rows) + " rows &middot; " + kb + " KB</span>" +
         "</button>";
+    });
+
+    // Files served alongside the page. The URL matters as much as the download:
+    // these tools open a layer straight from one.
+    LINKS.forEach(function (k, i) {
+      html.push('<div class="dl dl-geo">' +
+        '<a class="dl-name" href="' + esc(k.u) + '" download>' + esc(k.l) + "</a>" +
+        '<span class="dl-meta">' + esc(k.fmt) + " &middot; " + k.mb + " MB &middot; " +
+          esc(k.note) + "</span>" +
+        '<button type="button" class="dl-copy" data-url="' + esc(k.u) + '">Copy URL</button>' +
+        "</div>");
     });
 
     // The WDPA itself is not ours to redistribute, so point at the source.
@@ -1217,6 +1241,26 @@
       b.addEventListener("click", function () {
         var d = DL[+b.getAttribute("data-dl")];
         saveCsv(d.f, d.t);
+      });
+    });
+
+    Array.prototype.forEach.call(host.querySelectorAll(".dl-copy"), function (b) {
+      b.addEventListener("click", function (e) {
+        e.preventDefault();
+        var url = b.getAttribute("data-url");
+        var done = function () {
+          var was = b.textContent;
+          b.textContent = "Copied";
+          setTimeout(function () { b.textContent = was; }, 1600);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(done, done);
+        } else {
+          var ta = document.createElement("textarea");
+          ta.value = url; document.body.appendChild(ta); ta.select();
+          try { document.execCommand("copy"); } catch (err) { /* nothing to do */ }
+          ta.remove(); done();
+        }
       });
     });
 
